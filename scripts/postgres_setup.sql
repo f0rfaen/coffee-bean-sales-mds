@@ -1,0 +1,12 @@
+CREATE USER cbs_username WITH PASSWORD 'cbs_password';
+
+\c coffee_bean_sales
+GRANT ALL PRIVILEGES ON DATABASE coffee_bean_sales TO cbs_username;
+
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO cbs_username;
+
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO cbs_username;
+
+GRANT CREATE ON SCHEMA public TO cbs_username;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO cbs_username;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO cbs_username;
