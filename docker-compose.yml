@@ -1,39 +1,32 @@
-# Use a modern version of Docker Compose file format
-version: '3.8'
+version: "3.8"
 
-# Define the services (containers) that make up your application
 services:
-  # The name of our service
   db:
-    # Use the official Postgres image from Docker Hub
     image: postgres:16-alpine
-    
-    # Map the container's port 5432 to the host's port 5432
-    # This allows your Python script on your machine to connect to the database
     ports:
       - "5433:5432"
-
-    # Set environment variables for the Postgres container
     environment:
-      # This is the default user created by the image. We'll use this to run the setup script.
       - POSTGRES_USER=postgres
-      # We'll use this to connect as the default user
       - POSTGRES_PASSWORD=postgres
-      
-      # The username, password, and database that your Python script will use
-      # Setting these here ensures they are created automatically when the container starts
       - POSTGRES_DB=coffee_bean_sales
       - POSTGRES_USER_DB_CREATE=cbs_username
       - POSTGRES_PASSWORD_DB_CREATE=cbs_password
-
-    # Use volumes to persist data and to run the setup script
     volumes:
-      # This maps the local `scripts` folder to a special directory in the container
-      # Any .sql or .sh files in this directory are executed automatically on first run
       - ./scripts:/docker-entrypoint-initdb.d
-      # This volume persists the data, so it doesn't get deleted when the container is stopped
       - postgres_data:/var/lib/postgresql/data
 
-# Define the volumes used by the services
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+
 volumes:
   postgres_data:
+  minio_data:
