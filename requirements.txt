@@ -1,5 +1,10 @@
-pandas 
-openpyxl 
-psycopg2-binary 
-sqlalchemy
-dotenv
+pandas
+openpyxl
+psycopg2-binary
+python-dotenv
+toml
+dlt[filesystem,sql_database]
+boto3
+s3fs
+pyarrow
+pytest

@@ -1,0 +1,24 @@
+[minio]
+endpoint_url = "http://localhost:9000"
+aws_access_key_id = "minioadmin"
+aws_secret_access_key = "minioadmin"
+bucket_name = "coffee-bean-data"
+
+[postgres]
+host = "localhost"
+port = 5433
+database = "coffee_bean_sales"
+username = "cbs_username"
+password = "cbs_password"
+
+[pipeline]
+name = "postgres_to_minio"
+dataset_name = "coffee_data"
+layout = "{table_name}/{load_id}.parquet"
+
+[tables]
+source_tables = ["orders", "customers", "products"]
+
+[logging]
+level = "INFO"
+format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
