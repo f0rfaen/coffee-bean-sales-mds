@@ -1,0 +1,8 @@
+pandas 
+openpyxl 
+psycopg2-binary 
+sqlalchemy
+dlt[duckdb]
+psycopg2
+duckdb
+pytest
