@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=coffee_bean_sales
+      - POSTGRES_USER_DB_CREATE=cbs_username
+      - POSTGRES_PASSWORD_DB_CREATE=cbs_password
+    volumes:
+      - ./scripts:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
