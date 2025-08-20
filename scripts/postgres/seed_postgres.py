@@ -1,7 +1,7 @@
 import pandas as pd
 from sqlalchemy import create_engine
 
-excel_path = "../data/raw_data.xlsx"
+excel_path = "../../data/raw_data.xlsx"
 
 db_user = "cbs_username"
 db_password = "cbs_password"

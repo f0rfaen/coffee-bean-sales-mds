@@ -1,6 +1,6 @@
 [postgres]
-host = "localhost"
-port = 5433
+host = "db"
+port = 5432
 database = "coffee_bean_sales"
 username = "cbs_username"
 password = "cbs_password"
