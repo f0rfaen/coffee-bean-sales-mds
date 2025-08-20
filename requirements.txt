@@ -6,3 +6,4 @@ dlt[duckdb]
 psycopg2
 duckdb
 pytest
+toml
