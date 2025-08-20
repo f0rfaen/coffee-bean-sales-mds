@@ -1,0 +1,12 @@
+config:
+  send_anonymous_usage_stats: false
+  use_color_tags: true
+  
+sim_data_warehouse:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: '../sim_data_warehouse/sim_data_warehouse.duckdb'
+      schema: dev
+      threads: 4
