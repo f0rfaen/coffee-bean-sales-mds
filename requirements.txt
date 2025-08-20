@@ -7,3 +7,5 @@ psycopg2
 duckdb
 pytest
 toml
+dbt-core
+dbt-duckdb
