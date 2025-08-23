@@ -1,4 +1,4 @@
-{{ config(materialized = 'view') }}
+{{ config(materialized = 'view', schema='staging') }}
 
 SELECT 
     CAST(order_id AS VARCHAR) AS order_id,

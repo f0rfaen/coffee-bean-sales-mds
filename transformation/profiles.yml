@@ -1,8 +1,7 @@
-sim_data_warehouse:
+transformation:
   target: dev
   outputs:
     dev:
       type: duckdb
       path: '../sim_data_warehouse/sim_data_warehouse.duckdb'
-      schema: staging
       threads: 4

@@ -1,4 +1,4 @@
-{{ config(materialized = 'view') }}
+{{ config(materialized = 'view', schema='staging') }}
 SELECT
     CAST(product_id AS VARCHAR) AS product_id,
     TRIM(LOWER(coffee_type)) AS coffee_type,
