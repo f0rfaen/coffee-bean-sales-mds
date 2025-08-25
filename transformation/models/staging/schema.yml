@@ -1,0 +1,92 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: "This model contains one unique row per customer, cleaned from the raw data. It serves as the primary source of truth for customer information."
+    columns:
+      - name: customer_id
+        description: "The unique identifier for each customer. It is the primary key for this model."
+        tests:
+          - unique
+          - not_null
+      - name: first_name
+        description: "The customer's first name, extracted and trimmed from the `customer_name` column."
+        tests:
+          - not_null
+      - name: last_name
+        description: "The customer's last name, extracted and trimmed from the `customer_name` column."
+      - name: email
+        description: "The customer's email address, standardized to lowercase. This column can be NULL."
+        tests:
+          - unique
+      - name: phone_number
+        description: "The customer's phone number."
+      - name: address_line_1
+        description: "The customer's primary street address."
+      - name: city
+        description: "The city where the customer resides."
+      - name: country
+        description: "The customer's country."
+      - name: postcode
+        description: "The customer's postal code."
+      - name: has_loyalty_card
+        description: "A boolean flag indicating whether the customer has a loyalty card."
+        tests:
+          - not_null
+
+  - name: stg_orders
+    description: "This model contains one row per order line item. It includes cleaned transactional data and foreign keys to link to customer and product information."
+    columns:
+      - name: order_id
+        description: "The unique identifier for the order. This column is not unique as an order can have multiple line items."
+        tests:
+          - not_null
+      - name: customer_id
+        description: "The foreign key linking to the `stg_customers` model."
+        tests:
+          - not_null
+      - name: product_id
+        description: "The foreign key linking to the `stg_products` model."
+        tests:
+          - not_null
+      - name: order_date
+        description: "The date the order was placed."
+        tests:
+          - not_null
+      - name: quantity
+        description: "The number of units of the product in the order line item."
+        tests:
+          - not_null
+
+  - name: stg_products
+    description: "This model contains one unique row per product, with pricing and type information."
+    columns:
+      - name: product_id
+        description: "The unique identifier for each product. This is the primary key for the model."
+        tests:
+          - unique
+          - not_null
+      - name: coffee_type
+        description: "The type of coffee, standardized to lowercase."
+        tests:
+          - not_null
+      - name: roast_type
+        description: "The roast type of the coffee, standardized to lowercase."
+        tests:
+          - not_null
+      - name: size
+        description: "The size of the product (e.g., in grams or ounces)."
+        tests:
+          - not_null
+      - name: unit_price
+        description: "The price of a single unit of the product."
+        tests:
+          - not_null
+      - name: price_per_100g
+        description: "The price of the product per 100g, a metric for comparison."
+        tests:
+          - not_null
+      - name: profit
+        description: "The profit earned on a single unit of the product."
+        tests:
+          - not_null
