@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: int_orders_enriched
+    columns:
+      - name: order_id
+        tests:
+          - not_null
+      - name: order_date
+        tests:
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+      - name: product_id
+        tests:
+          - not_null
+      - name: quantity
+        tests:
+          - not_null
+      - name: total_sales
+        tests:
+          - not_null

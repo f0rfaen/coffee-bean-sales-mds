@@ -1,0 +1,103 @@
+version: 2
+
+models:
+  - name: agg_customer_product_lifetime
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+      - name: first_purchase_date
+        tests:
+          - not_null
+      - name: last_purchase_date
+        tests:
+          - not_null
+  - name: agg_daily_profitability
+    columns:
+      - name: order_date
+        tests:
+          - not_null
+          - unique
+  - name: agg_monthly_sales
+    columns:
+      - name: sales_month
+        tests:
+          - not_null
+      - name: roast_type
+        tests:
+          - not_null
+  - name: dim_customers
+    columns:
+      - name: customer_sk
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        tests:
+          - not_null
+          - unique
+      - name: email
+        tests:
+          - not_null
+      - name: country
+        tests:
+          - not_null
+  - name: dim_date
+    columns:
+      - name: date_day
+        tests:
+          - not_null
+          - unique
+  - name: dim_products
+    columns:
+      - name: product_id
+        tests:
+          - not_null
+          - unique
+      - name: coffee_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['arabica', 'robusta', 'excelsa', 'liberica']
+      - name: roast_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['light', 'medium', 'dark']
+      - name: size
+        tests:
+          - not_null
+      - name: unit_price
+        tests:
+          - not_null
+  - name: fct_customer_cohorts
+    columns:
+      - name: customer_id
+        tests:
+          - not_null
+      - name: sales_month
+        tests:
+          - not_null
+      - name: first_order_date
+        tests:
+          - not_null
+      - name: cohort_period
+        tests:
+          - not_null
+  - name: fct_orders
+    columns:
+      - name: customer_sk
+        tests:
+          - not_null
+      - name: order_id
+        tests:
+          - not_null
+      - name: order_date
+        tests:
+          - not_null
+      - name: product_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_products')
+              field: product_id
