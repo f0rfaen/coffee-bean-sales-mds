@@ -1,7 +1,7 @@
 name: 'transformation'
 version: '1.0.0'
 config-version: 2
-profile: 'sim_data_warehouse'
+profile: 'transformation'
 
 model-paths: ["models"]
 seed-paths: ["seeds"]
@@ -18,8 +18,11 @@ clean-targets:
 models:
   transformation:
     staging:
-      schema: staging
+      schema: "staging"
+      +materialized: view
+    intermediate:
+      schema: "intermediate"
       +materialized: view
     marts:
-      schema: marts
+      +schema: "marts"
       +materialized: table

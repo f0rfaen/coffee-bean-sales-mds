@@ -3,3 +3,7 @@ __pycache__
 .env
 data
 logs
+.vscode
+transformation/.user.yml
+sim_data_warehouse.duckdb
+sim_data_warehouse.duckdb.wal
