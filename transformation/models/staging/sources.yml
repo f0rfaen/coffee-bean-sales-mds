@@ -2,8 +2,8 @@ version: 2
 
 sources:
   - name: raw
+    database: raw
     schema: raw
-    database: sim_data_warehouse
     tables:
       - name: orders
       - name: customers

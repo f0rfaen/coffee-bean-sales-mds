@@ -1,0 +1,24 @@
+[postgres]
+host = "localhost"
+port = 5433
+database = "coffee_bean_sales"
+username = "cbs_username"
+password = "cbs_password"
+
+[clickhouse]
+host = "localhost"
+port = 8123
+username = "default"
+password = "example_password"
+database = "coffee_bean_sales"
+
+[pipeline]
+name = "postgres_to_clickhouse"
+dataset_name = "raw"
+
+[tables]
+source_tables = ["orders", "customers", "products"]
+
+[logging]
+level = "INFO"
+format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

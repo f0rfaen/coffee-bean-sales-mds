@@ -1,24 +1,24 @@
 {{ config(materialized = 'view', schema='staging') }}
+
 SELECT
-    CAST(product_id AS VARCHAR) AS product_id,
+    toString(product_id) AS product_id,
     CASE
-        WHEN TRIM(LOWER(coffee_type)) LIKE 'ara%' THEN 'arabica'
-        WHEN TRIM(LOWER(coffee_type)) LIKE 'exc%' THEN 'excelsa'
-        WHEN TRIM(LOWER(coffee_type)) LIKE 'lib%' THEN 'liberica'
-        WHEN TRIM(LOWER(coffee_type)) LIKE 'rob%' THEN 'robusta'
-        ELSE TRIM(LOWER(coffee_type))
+        WHEN trim(lower(coffee_type)) LIKE 'ara%' THEN 'arabica'
+        WHEN trim(lower(coffee_type)) LIKE 'exc%' THEN 'excelsa'
+        WHEN trim(lower(coffee_type)) LIKE 'lib%' THEN 'liberica'
+        WHEN trim(lower(coffee_type)) LIKE 'rob%' THEN 'robusta'
+        ELSE trim(lower(coffee_type))
     END AS coffee_type,
     CASE
-        WHEN TRIM(LOWER(roast_type)) = 'd' THEN 'dark'
-        WHEN TRIM(LOWER(roast_type)) = 'm' THEN 'medium'
-        WHEN TRIM(LOWER(roast_type)) = 'l' THEN 'light'
-        ELSE TRIM(LOWER(roast_type))
+        WHEN trim(lower(roast_type)) = 'd' THEN 'dark'
+        WHEN trim(lower(roast_type)) = 'm' THEN 'medium'
+        WHEN trim(lower(roast_type)) = 'l' THEN 'light'
+        ELSE trim(lower(roast_type))
     END AS roast_type,
-    CAST(size AS INTEGER) AS size,
-    CAST(unit_price AS DECIMAL(10, 2)) AS unit_price,
-    CAST(price_per_100g AS DECIMAL(10, 2)) AS price_per_100g,
-    CAST(profit AS DECIMAL(10, 2)) AS profit,
-FROM {{ source('raw', 'products') }}
+    toInt64(size) AS size,
+    toFloat64(unit_price) AS unit_price,
+    toFloat64(price_per_100g) AS price_per_100g,
+    toFloat64(profit) AS profit
+FROM raw.products
 WHERE
     product_id IS NOT NULL
-    

@@ -1,11 +1,11 @@
 {{ config(materialized = 'view', schema='staging') }}
 
 SELECT 
-    CAST(order_id AS VARCHAR) AS order_id,
-    CAST(customer_id AS VARCHAR) AS customer_id,
-    CAST(product_id AS VARCHAR) AS product_id,
-    CAST(order_date AS DATE) AS order_date,
-    CAST(quantity AS INTEGER) AS quantity,
-FROM {{ source('raw', 'orders') }}
+    toString(order_id) AS order_id,
+    toString(customer_id) AS customer_id,
+    toString(product_id) AS product_id,
+    toDate(order_date) AS order_date,
+    toInt64(quantity) AS quantity
+FROM raw.orders
 WHERE
     order_id IS NOT NULL

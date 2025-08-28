@@ -1,17 +1,10 @@
--- Test for gaps in the date sequence in dim_date.
-
-WITH date_diffs AS (
-    SELECT
-        date_day,
-        LAG(date_day, 1) OVER (ORDER BY date_day) AS prev_date
-    FROM
-        {{ ref('dim_date') }}
-)
 SELECT
-    date_day,
-    prev_date
+    a.date_day
 FROM
-    date_diffs
+    {{ ref('dim_date') }} AS a
+LEFT JOIN
+    {{ ref('dim_date') }} AS b
+        ON toDate(a.date_day + 1) = b.date_day
 WHERE
-    date_day != DATE_ADD(prev_date, INTERVAL '1 day')
-    AND prev_date IS NOT NULL
+    b.date_day IS NULL
+    AND a.date_day < today()

@@ -13,7 +13,7 @@ WITH customer_first_order AS (
     FROM
         {{ ref('fct_orders') }}
     GROUP BY
-    customer_id
+        customer_id
 
 ),
 
@@ -21,13 +21,13 @@ customer_monthly_sales AS (
 
     SELECT
         customer_id,
-        DATE_TRUNC('month', order_date) AS sales_month,
+        toStartOfMonth(order_date) AS sales_month,
         SUM(total_sales) AS total_monthly_sales,
         COUNT(DISTINCT order_id) AS monthly_order_count
     FROM
         {{ ref('fct_orders') }}
     GROUP BY
-        1, 2
+        customer_id, sales_month
 
 )
 
@@ -35,8 +35,8 @@ SELECT
     cmo.customer_id,
     cmo.sales_month,
     cfo.first_order_date,
-    DATE_PART('year', cmo.sales_month) * 12 + DATE_PART('month', cmo.sales_month) -
-    (DATE_PART('year', cfo.first_order_date) * 12 + DATE_PART('month', cfo.first_order_date)) AS cohort_period,
+    (toYear(cmo.sales_month) * 12 + toMonth(cmo.sales_month)) -
+    (toYear(cfo.first_order_date) * 12 + toMonth(cfo.first_order_date)) AS cohort_period,
     cmo.total_monthly_sales,
     cmo.monthly_order_count
 FROM

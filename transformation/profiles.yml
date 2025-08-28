@@ -2,6 +2,14 @@ transformation:
   target: dev
   outputs:
     dev:
-      type: duckdb
-      path: '../sim_data_warehouse/sim_data_warehouse.duckdb'
+      type: clickhouse
+      host: localhost
+      port: 8123  # or 9440 if using TLS
+      user: default
+      password: example_password
+      database: raw # This should be your database, not the dataset name
+      schema: raw # This is your dbt dataset, which you named 'raw' in your dlt pipeline
       threads: 4
+      quote_identifiers: False
+      quote_policy:
+        schema: false
