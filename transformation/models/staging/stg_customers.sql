@@ -1,4 +1,4 @@
-{{ config(materialized='view', schema='staging') }}
+{{ config(materialized='table', schema='staging') }}
 
 SELECT 
     CAST(customer_id AS VARCHAR) AS customer_id,
@@ -10,7 +10,10 @@ SELECT
     TRIM(city) AS city,
     TRIM(country) AS country,
     TRIM(postcode) AS postcode,
-    CAST(loyalty_card AS BOOLEAN) AS has_loyalty_card
+    CASE
+        WHEN TRIM(LOWER(loyalty_card)) IN ('yes', 'true', '1') THEN TRUE
+        ELSE FALSE
+    END AS has_loyalty_card
 FROM {{ source('raw', 'customers') }}
 WHERE
     customer_id IS NOT NULL
