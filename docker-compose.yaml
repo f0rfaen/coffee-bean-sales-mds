@@ -129,6 +129,12 @@ services:
     volumes:
       - ./scripts:/docker-entrypoint-initdb.d
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cbs_username -d coffee_bean_sales"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   airflow-apiserver:
     <<: *airflow-common
@@ -353,6 +359,28 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+
+  trino:
+    image: trinodb/trino:476
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./trino/etc:/etc/trino
+      - ./sim_data_warehouse:/opt/trino/data
+      - ./trino/catalog:/etc/trino/catalog
+    environment:
+      - TRINO_JVM_CONFIG=-Xmx1G
+    networks:
+      - default
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/v1/info"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   postgres-db-volume:
