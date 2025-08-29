@@ -40,6 +40,13 @@ def create_and_run_pipeline():
         "size": {"data_type": "text"},
         "unit_price": {"data_type": "decimal"},
         "sales": {"data_type": "decimal"},
+        "order_id": {"data_type": "text"},
+        "order_date": {"data_type": "date"},
+        "customer_id": {"data_type": "text"},
+        "product_id": {"data_type": "text"},
+        "quantity": {"data_type": "bigint"},
+        "_dlt_load_id": {"data_type": "text"},
+        "_dlt_id": {"data_type": "text"},
     }
     
     customers_columns = {

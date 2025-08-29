@@ -9,3 +9,4 @@ pytest
 toml
 dbt-core
 dbt-duckdb
+dbt-trino

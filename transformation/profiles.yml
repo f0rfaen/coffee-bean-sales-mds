@@ -1,7 +1,16 @@
 transformation:
-  target: dev
+  target: trino
   outputs:
-    dev:
+    trino:
+      type: trino
+      method: none
+      host: localhost
+      port: 8081
+      user: dbt
+      database: duckdb
+      schema: marts
+      threads: 4
+    duckdb:
       type: duckdb
       path: '../sim_data_warehouse/sim_data_warehouse.duckdb'
       threads: 4

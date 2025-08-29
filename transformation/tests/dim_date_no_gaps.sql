@@ -13,5 +13,5 @@ SELECT
 FROM
     date_diffs
 WHERE
-    date_day != DATE_ADD(prev_date, INTERVAL '1 day')
+    date_day != DATE_ADD('day', 1, prev_date)
     AND prev_date IS NOT NULL
