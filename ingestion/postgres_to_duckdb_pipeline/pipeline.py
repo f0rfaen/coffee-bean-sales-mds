@@ -1,10 +1,11 @@
 import dlt
 import psycopg2
 import toml
-
+import os
 
 def extract_postgres_table(table_name: str):
-    config = toml.load("config.toml")
+    config_file = "config_local.toml" if os.environ.get("RUN_LOCAL") else "config_docker.toml"
+    config = toml.load(config_file)
     pg_cfg = config["postgres"]
     
     conn = psycopg2.connect(
@@ -26,7 +27,8 @@ def extract_postgres_table(table_name: str):
 
 
 def create_and_run_pipeline():
-    config = toml.load("config.toml")
+    config_file = "config_local.toml" if os.environ.get("RUN_LOCAL") else "config_docker.toml"
+    config = toml.load(config_file)
     duck_cfg = config["duckdb"]
     pipeline_cfg = config["pipeline"]
     tables = config["tables"]["source_tables"]

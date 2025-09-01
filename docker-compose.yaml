@@ -1,17 +1,17 @@
 # Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
+# or more contributor license agreements. See the NOTICE file
 # distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
+# regarding copyright ownership. The ASF licenses this file
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
+# with the License. You may obtain a copy of the License at
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
+# KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations
 # under the License.
 #
@@ -23,24 +23,24 @@
 # This configuration supports basic configuration using environment variables or an .env file
 # The following variables are supported:
 #
-# AIRFLOW_IMAGE_NAME           - Docker image name used to run Airflow.
-#                                Default: apache/airflow:3.0.4
-# AIRFLOW_UID                  - User ID in Airflow containers
-#                                Default: 50000
-# AIRFLOW_PROJ_DIR             - Base path to which all the files will be volumed.
-#                                Default: .
+# AIRFLOW_IMAGE_NAME - Docker image name used to run Airflow.
+# Default: apache/airflow:3.0.4
+# AIRFLOW_UID - User ID in Airflow containers
+# Default: 50000
+# AIRFLOW_PROJ_DIR - Base path to which all the files will be volumed.
+# Default: .
 # Those configurations are useful mostly in case of standalone testing/running Airflow in test/try-out mode
 #
-# _AIRFLOW_WWW_USER_USERNAME   - Username for the administrator account (if requested).
-#                                Default: airflow
-# _AIRFLOW_WWW_USER_PASSWORD   - Password for the administrator account (if requested).
-#                                Default: airflow
+# _AIRFLOW_WWW_USER_USERNAME - Username for the administrator account (if requested).
+# Default: airflow
+# _AIRFLOW_WWW_USER_PASSWORD - Password for the administrator account (if requested).
+# Default: airflow
 # _PIP_ADDITIONAL_REQUIREMENTS - Additional PIP requirements to add when starting all containers.
-#                                Use this option ONLY for quick checks. Installing requirements at container
-#                                startup is done EVERY TIME the service is started.
-#                                A better way is to build a custom image or extend the official image
-#                                as described in https://airflow.apache.org/docs/docker-stack/build.html.
-#                                Default: ''
+# Use this option ONLY for quick checks. Installing requirements at container
+# startup is done EVERY TIME the service is started.
+# A better way is to build a custom image or extend the official image
+# as described in https://airflow.apache.org/docs/docker-stack/build.html.
+# Default: ''
 #
 # Feel free to modify this file to suit your needs.
 ---
@@ -59,7 +59,7 @@ x-airflow-common: &airflow-common
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ""
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
-    AIRFLOW__CORE__LOAD_EXAMPLES: "true"
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
     AIRFLOW__CORE__EXECUTION_API_SERVER_URL: "http://airflow-apiserver:8080/execution/"
     # yamllint disable rule:line-length
     # Use simple http server on scheduler for health checks
@@ -77,6 +77,7 @@ x-airflow-common: &airflow-common
     - ${AIRFLOW_PROJ_DIR:-.}/orchestration/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/orchestration/plugins:/opt/airflow/plugins
     - ${AIRFLOW_PROJ_DIR:-.}/ingestion:/opt/airflow/ingestion
+    - ${AIRFLOW_PROJ_DIR:-.}/transformation:/opt/airflow/transformation
     - ${AIRFLOW_PROJ_DIR:-.}/sim_data_warehouse:/opt/airflow/sim_data_warehouse
     - ${AIRFLOW_PROJ_DIR:-.}/requirements.txt:/opt/airflow/requirements.txt
   user: "${AIRFLOW_UID:-50000}:0"
@@ -85,6 +86,8 @@ x-airflow-common: &airflow-common
       condition: service_healthy
     postgres:
       condition: service_healthy
+  networks:
+    - my_project_network
 
 services:
   postgres:
@@ -101,6 +104,8 @@ services:
       retries: 5
       start_period: 5s
     restart: always
+    networks:
+      - my_project_network
 
   redis:
     # Redis is limited to 7.2-bookworm due to licencing change
@@ -115,6 +120,8 @@ services:
       retries: 50
       start_period: 30s
     restart: always
+    networks:
+      - my_project_network
 
   db:
     image: postgres:16-alpine
@@ -135,6 +142,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    networks:
+      - my_project_network
 
   airflow-apiserver:
     <<: *airflow-common
@@ -371,7 +380,7 @@ services:
     environment:
       - TRINO_JVM_CONFIG=-Xmx1G
     networks:
-      - default
+      - my_project_network
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/v1/info"]
       interval: 10s
@@ -385,3 +394,7 @@ services:
 volumes:
   postgres-db-volume:
   postgres_data:
+
+networks:
+  my_project_network:
+    name: project_network
