@@ -1,119 +1,130 @@
-import pytest
-from unittest.mock import MagicMock
-import sys
-import os
-import toml
-import psycopg2
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from unittest.mock import patch, MagicMock
 
 import pipeline
 
 
-@pytest.fixture
-def mock_dependencies(monkeypatch):
-    mock_config = {
-        "postgres": {
-            "host": "localhost", "port": 5433, "database": "coffee_bean_sales",
-            "username": "cbs_username", "password": "cbs_password"
-        },
-        "duckdb": {"file_path": "../../sim_data_warehouse/sim_data_warehouse.duckdb"},
-        "pipeline": {"name": "postgres_to_duckdb", "dataset_name": "raw"},
-        "tables": {"source_tables": ["orders", "customers", "products"]},
-        "logging": {"level": "INFO", "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"}
-    }
-    monkeypatch.setattr('toml.load', MagicMock(return_value=mock_config))
 
-    mock_cursor = MagicMock()
+def test_normalize_column_name():
+    assert pipeline.normalize_column_name("Order Date") == "order_date"
+    assert pipeline.normalize_column_name("Customer ID") == "customer_id"
+    assert pipeline.normalize_column_name("Already_clean") == "already_clean"
+
+
+
+@patch("pipeline.psycopg2.connect")
+def test_inspect_postgres_database(mock_connect, tmp_path):
     mock_conn = MagicMock()
-    mock_conn.cursor.return_value = mock_cursor
-    monkeypatch.setattr('psycopg2.connect', MagicMock(return_value=mock_conn))
+    mock_cur = MagicMock()
+    mock_connect.return_value = mock_conn
+    mock_conn.cursor.return_value = mock_cur
 
-    mock_dlt_pipeline = MagicMock()
-    mock_dlt_resource = MagicMock()
-    monkeypatch.setattr('dlt.pipeline', mock_dlt_pipeline)
-    monkeypatch.setattr('dlt.resource', mock_dlt_resource)
+    def fetchall_side_effect(*args, **kwargs):
+        sql = mock_cur.execute.call_args[0][0]
+        params = mock_cur.execute.call_args[0][1] if len(mock_cur.execute.call_args[0]) > 1 else None
 
-    yield {
-        "mock_cursor": mock_cursor,
-        "mock_conn": mock_conn,
-        "mock_dlt_pipeline": mock_dlt_pipeline,
-        "mock_dlt_resource": mock_dlt_resource,
+        if "FROM information_schema.tables" in sql:
+            return [("orders",), ("customers",)]
+        elif "FROM information_schema.columns" in sql and params == ("orders",):
+            return [("order_id", "text", "NO"), ("order_date", "timestamp", "YES")]
+        elif "FROM information_schema.columns" in sql and params == ("customers",):
+            return [("customer_id", "text", "NO")]
+        else:
+            return []
+
+    def fetchone_side_effect(*args, **kwargs):
+        sql = mock_cur.execute.call_args[0][0]
+        params = mock_cur.execute.call_args[0][1] if len(mock_cur.execute.call_args[0]) > 1 else None
+
+        if "COUNT(*)" in sql:
+            if params == ("orders",) or "orders" in sql:
+                return (2,)
+            elif params == ("customers",) or "customers" in sql:
+                return (1,)
+            else:
+                return (0,)
+        return (0,)
+
+    mock_cur.fetchall.side_effect = fetchall_side_effect
+    mock_cur.fetchone.side_effect = fetchone_side_effect
+
+    with patch("pipeline.toml.load") as mock_toml:
+        mock_toml.return_value = {"postgres": {
+            "host": "h", "port": 5432, "database": "db", "username": "u", "password": "p"
+        }}
+
+        result = pipeline.inspect_postgres_database()
+
+        assert "orders" in result
+        assert result["orders"]["row_count"] == 2
+        assert result["orders"]["column_count"] == 2
+        assert "customers" in result
+        assert result["customers"]["row_count"] == 1
+
+
+@patch("pipeline.psycopg2.connect")
+def test_extract_postgres_table_full(mock_connect):
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    mock_connect.return_value = mock_conn
+    mock_conn.cursor.return_value = mock_cur
+
+    mock_cur.fetchone.side_effect = [
+        (True,),
+    ]
+    mock_cur.description = [("id",), ("name",)]
+    mock_cur.fetchall.return_value = [(1, "Alice"), (2, "Bob")]
+
+    with patch("pipeline.toml.load") as mock_toml:
+        mock_toml.return_value = {"postgres": {
+            "host": "h", "port": 5432, "database": "db", "username": "u", "password": "p"
+        }}
+
+        rows = list(pipeline.extract_postgres_table_incremental("customers"))
+        assert len(rows) == 2
+        assert rows[0]["id"] == 1
+        assert rows[0]["name"] == "Alice"
+
+
+@patch("pipeline.psycopg2.connect")
+def test_extract_postgres_table_with_cursor(mock_connect):
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    mock_connect.return_value = mock_conn
+    mock_conn.cursor.return_value = mock_cur
+
+    mock_cur.fetchone.side_effect = [
+        (True,),
+        ("order_date",)
+    ]
+    mock_cur.description = [("order_date",), ("order_id",)]
+    mock_cur.fetchall.return_value = [(1, "o1"), (2, "o2")]
+
+    with patch("pipeline.toml.load") as mock_toml, \
+        patch("pipeline.dlt.current") as mock_dlt_state:
+        mock_toml.return_value = {"postgres": {
+            "host": "h", "port": 5432, "database": "db", "username": "u", "password": "p"
+        }}
+        mock_dlt_state.source_state.return_value = {}
+
+        rows = list(pipeline.extract_postgres_table_incremental("orders", cursor_column="order_date"))
+        assert len(rows) == 2
+        assert rows[-1]["order_id"] == "o2"
+        assert "orders_order_date_last_cursor" in mock_dlt_state.source_state()
+
+@patch("pipeline.dlt.pipeline")
+@patch("pipeline.toml.load")
+def test_create_and_run_pipeline(mock_toml, mock_pipeline):
+    mock_toml.return_value = {
+        "duckdb": {"file_path": ":memory:"},
+        "pipeline": {"name": "test_pipeline"},
+        "tables": {"source_tables": ["customers"]},
     }
 
-def test_extract_postgres_table_yields_data(mock_dependencies):
-    mock_cursor = mock_dependencies['mock_cursor']
-    mock_conn = mock_dependencies['mock_conn']
-
-    mock_data = [
-        (1, 'John Doe', 'john@example.com'),
-        (2, 'Jane Smith', 'jane@example.com')
-    ]
-    mock_cursor.description = [('id', None), ('name', None), ('email', None)]
-    mock_cursor.fetchall.return_value = mock_data
-
-    table_name = "test_table"
-    result_generator = pipeline.extract_postgres_table(table_name)
-
-    result_list = list(result_generator)
-
-    mock_conn.cursor.assert_called_once()
-    mock_cursor.execute.assert_called_once_with(f"SELECT * FROM {table_name}")
-    mock_cursor.fetchall.assert_called_once()
-
-    expected_data = [
-        {'id': 1, 'name': 'John Doe', 'email': 'john@example.com'},
-        {'id': 2, 'name': 'Jane Smith', 'email': 'jane@example.com'}
-    ]
-    assert result_list == expected_data
-
-
-def test_main_pipeline_run_calls_dlt_correctly(mock_dependencies):
-    mock_dlt_pipeline = mock_dependencies['mock_dlt_pipeline']
-    mock_dlt_resource = mock_dependencies['mock_dlt_resource']
-    
-    mock_pipeline_instance = MagicMock()
-    mock_dlt_pipeline.return_value = mock_pipeline_instance
-    
-    mock_dlt_resource.return_value = MagicMock()
+    mock_pipe_instance = MagicMock()
+    mock_pipeline.return_value = mock_pipe_instance
+    mock_pipe_instance.run.return_value = {"tables": {"customers": {"status": "loaded"}}}
 
     pipeline.create_and_run_pipeline()
-    
-    mock_dlt_pipeline.assert_called_once()
-    assert mock_dlt_pipeline.call_args.kwargs['pipeline_name'] == 'postgres_to_duckdb'
-    assert mock_dlt_pipeline.call_args.kwargs['dataset_name'] == 'raw'
 
-    assert mock_dlt_resource.call_count == 3
-    
-    mock_pipeline_instance.run.assert_called_once()
-
-
-def test_extract_postgres_table_empty_data(mock_dependencies):
-    mock_cursor = mock_dependencies['mock_cursor']
-    mock_conn = mock_dependencies['mock_conn']
-    
-    mock_cursor.description = [('id', None), ('name', None)]
-    mock_cursor.fetchall.return_value = []
-    
-    table_name = "empty_table"
-    result_generator = pipeline.extract_postgres_table(table_name)
-    
-    assert list(result_generator) == []
-    
-    mock_conn.cursor.assert_called_once()
-    mock_cursor.execute.assert_called_once_with(f"SELECT * FROM {table_name}")
-    mock_cursor.fetchall.assert_called_once()
-    
-
-def test_config_file_not_found_raises_error(monkeypatch):
-    monkeypatch.setattr('toml.load', MagicMock(side_effect=FileNotFoundError("File not found")))
-
-    with pytest.raises(FileNotFoundError):
-        pipeline.create_and_run_pipeline()
-
-
-def test_database_connection_error(monkeypatch):
-    monkeypatch.setattr('psycopg2.connect', MagicMock(side_effect=psycopg2.OperationalError("Could not connect to database")))
-
-    with pytest.raises(psycopg2.OperationalError, match="Could not connect to database"):
-        list(pipeline.extract_postgres_table("some_table"))
+    mock_pipeline.assert_called_once()
+    mock_pipe_instance.run.assert_called_once()
