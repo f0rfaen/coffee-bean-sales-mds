@@ -183,7 +183,7 @@ def create_and_run_pipeline():
         "orders": {
             "columns": {
                 "order_id": {"data_type": "text"},
-                "order_date": {"data_type": "timestamp"},
+                "order_date": {"data_type": "date"},
                 "customer_id": {"data_type": "text"},
                 "product_id": {"data_type": "text"},
                 "quantity": {"data_type": "bigint"},
